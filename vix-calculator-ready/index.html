@@ -1,0 +1,105 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>מחשבון השקעות + מדד הפחד VIX</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      padding: 0;
+      background: #f4f4f4;
+      text-align: center;
+    }
+    h1 {
+      color: #222;
+      font-size: 28px;
+      font-weight: bold;
+    }
+    .calculator, .vix-box {
+      background: white;
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.1);
+      margin: 20px auto;
+      max-width: 400px;
+    }
+    input {
+      width: 80%;
+      padding: 10px;
+      margin: 10px 0;
+      font-size: 16px;
+      font-weight: bold;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .result {
+      margin-top: 20px;
+      font-size: 22px;
+      font-weight: bold;
+      color: green;
+    }
+    .vix-box {
+      font-size: 24px;
+    }
+    .low { color: green; font-size: 36px; font-weight: bold; }
+    .medium { color: orange; font-size: 36px; font-weight: bold; }
+    .high { color: red; font-size: 36px; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h1>מחשבון השקעות + מדד הפחד (VIX)</h1>
+  <div class="vix-box" id="vixBox">
+    טוען טוען...<br/>
+  </div>
+  <div class="calculator">
+    <input id="amount" type="number" placeholder="סכום השקעה ($)" /><br />
+    <input id="rate" type="number" placeholder="תשואה שנתית (%)" /><br />
+    <input id="years" type="number" placeholder="מספר שנים" /><br />
+    <button onclick="calculate()">חשב</button>
+    <div class="result" id="result"></div>
+  </div>
+
+  <script>
+    function calculate() {
+      const amount = parseFloat(document.getElementById("amount").value);
+      const rate = parseFloat(document.getElementById("rate").value) / 100;
+      const years = parseFloat(document.getElementById("years").value);
+      if (!amount || !rate || !years) return;
+
+      const final = amount * Math.pow(1 + rate, years);
+      document.getElementById("result").innerText =
+        `ערך סופי: $${final.toLocaleString(undefined, {maximumFractionDigits: 2})}`;
+    }
+
+    async function fetchVIX() {
+      try {
+        const res = await fetch("/.netlify/functions/get-vix");
+        const data = await res.json();
+        const vix = data.vix;
+        const box = document.getElementById("vixBox");
+        let level = "low", label = "נמוך", color = "green";
+
+        if (vix >= 25) { level = "high"; label = "גבוה"; color = "red"; }
+        else if (vix >= 17) { level = "medium"; label = "בינוני"; color = "orange"; }
+
+        box.innerHTML = `מדד הפחד בזמן אמיתי:<br><span class="${level}">VIX ${vix.toFixed(2)} - ${label}</span>`;
+      } catch (e) {
+        document.getElementById("vixBox").innerText = "שגיאה בטעינת מדד הפחד VIX...";
+      }
+    }
+
+    fetchVIX();
+    setInterval(fetchVIX, 60000);
+  </script>
+</body>
+</html>
